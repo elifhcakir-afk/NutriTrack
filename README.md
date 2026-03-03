@@ -54,12 +54,14 @@ Pure frontend logic implementation.
 
 📖 How to Use
 
-Clone the repository
-Open index.html in your browser
-Enter your personal data
-Add your meals
-Track your daily calories and macros
+1. Clone the repository
+   https://github.com/elifhcakir-afk/NutriTrack.git
+2. Open index.html in your browser
+3. Enter your personal data
+4. Add your meals
+5. Track your daily calories and macros
 
 ✍️ Author
 Developed by Elif H. Çakır
+
 “Building tools inspired by real-life needs.”
