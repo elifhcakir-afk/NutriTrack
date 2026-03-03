@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NutriTrack v2.6</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Roboto+Mono:wght@700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #10b981; --carb: #f59e0b; --prot: #ef4444; --fat: #3b82f6;
+            --bg: #f8fafc; --card: #ffffff; --text: #0f172a;
+            --br: #10b981; --lu: #f59e0b; --di: #ef4444; --sn: #8b5cf6; --be: #3b82f6;
+            --water: #0ea5e9;
+        }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 50px; }
+        header { background: #0f172a; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
+        .calendar-nav { display: flex; overflow-x: auto; gap: 10px; padding: 15px 20px; background: #fff; border-bottom: 1px solid #e2e8f0; scrollbar-width: none; position: sticky; top: 0; z-index: 100; }
+        .day-btn { min-width: 65px; padding: 10px; border-radius: 12px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; text-align: center; transition: 0.2s; }
+        .day-btn.active { background: var(--primary); color: white; border-color: var(--primary); transform: scale(1.05); box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); }
+        .day-btn span { display: block; font-size: 10px; text-transform: uppercase; margin-bottom: 2px; }
+        main { max-width: 1200px; margin: 20px auto; padding: 0 20px; display: grid; grid-template-columns: 1fr 400px; gap: 25px; }
+        .card { background: var(--card); padding: 1.5rem; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h3 { margin: 0 0 15px 0; font-size: 1.1rem; color: #2563eb; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+        input, select { width: 100%; padding: 12px; border: 1.5px solid #e2e8f0; border-radius: 10px; font-size: 14px; box-sizing: border-box; }
+        .btn { border: none; padding: 14px; border-radius: 10px; cursor: pointer; font-weight: 700; width: 100%; transition: 0.2s; }
+        .btn-green { background: var(--primary); color: white; }
+        .btn-blue { background: #6366f1; color: white; margin-top: 10px; }
+        .cal-display { font-family: 'Roboto Mono'; font-size: 2.2rem; text-align: center; margin: 15px 0; }
+        .macro-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; text-align: center; }
+        .progress-bg { background: #e2e8f0; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 5px; }
+        .progress-fill { height: 100%; transition: 0.5s ease-out; }
+        .log-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 15px; background: #f8fafc; border-radius: 12px; margin-bottom: 8px; border-left: 5px solid #ddd; }
+        .weight-chart-container { height: 150px; width: 100%; margin-top: 10px; background: #fff; border-radius: 10px; }
+        .water-controls { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+        .water-btn { background: var(--water); color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+
+<header>
+    <h2>NutriTrack v2.6</h2>
+    <div>
+        <button onclick="setLang('tr')">TR</button>
+        <button onclick="setLang('en')">EN</button>
+        <button onclick="setLang('de')">DE</button>
+    </div>
+</header>
+
+<div class="calendar-nav" id="calendar-strip"></div>
+
+<main>
+    <section>
+        <div class="card">
+            <h3 id="l-sum">Zusammenfassung</h3>
+            <div class="cal-display" id="cal-main">0 / 2000 kcal</div>
+            <div class="macro-row">
+                <div><span id="l-c">Carbs</span> <br><small id="v-c">0g</small><div class="progress-bg"><div id="b-c" class="progress-fill" style="background:var(--carb); width:0%"></div></div></div>
+                <div><span id="l-p">Protein</span> <br><small id="v-p">0g</small><div class="progress-bg"><div id="b-p" class="progress-fill" style="background:var(--prot); width:0%"></div></div></div>
+                <div><span id="l-f">Fett</span> <br><small id="v-f">0g</small><div class="progress-bg"><div id="b-f" class="progress-fill" style="background:var(--fat); width:0%"></div></div></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 id="l-assistant">Intelligenter Assistent</h3>
+            <input type="text" id="smart-input" oninput="handlePreview()" placeholder="Was hast du gegessen?">
+            <div class="form-row" style="margin-top:10px">
+                <input type="number" id="smart-amt" oninput="handlePreview()" placeholder="Menge">
+                <select id="smart-unit" onchange="handlePreview()">
+                    <option value="g">gram / ml</option>
+                    <option value="pc" id="o-pc">Stück</option>
+                    <option value="po" id="o-po">Portion</option>
+                </select>
+            </div>
+            <select id="meal-select" style="margin-bottom: 10px;">
+                <option value="br" id="o-br">Frühstück</option>
+                <option value="lu" id="o-lu">Mittagessen</option>
+                <option value="di" id="o-di">Abendessen</option>
+                <option value="sn" id="o-sn">Snack</option>
+                <option value="be" id="o-be">Getränk</option>
+            </select>
+            <div id="preview-area" style="display:none; padding:10px; background:#f0fdf4; border-radius:8px; margin-bottom:10px; font-weight:bold; color:var(--primary);"></div>
+            <button class="btn btn-green" id="b-add" onclick="addLog()">Hinzufügen</button>
+        </div>
+
+        <div class="card">
+            <h3 id="l-diary">Tagebuch</h3>
+            <div id="diary-list"></div>
+        </div>
+    </section>
+
+    <aside>
+        <div class="card">
+            <h3 id="l-target-title">Ziel & Rechner</h3>
+            <input type="number" id="target-input" value="2000" onchange="updateUI()">
+            <div style="margin-top:20px; border-top:1px solid #eee; padding-top:15px;">
+                <div class="form-row">
+                    <input type="number" id="c-w" placeholder="kg" oninput="syncWeight(this.value)">
+                    <input type="number" id="c-h" placeholder="cm">
+                </div>
+                <div class="form-row">
+                    <input type="number" id="c-a" placeholder="Alter">
+                    <select id="c-g">
+                        <option value="m" id="o-male">Männlich</option>
+                        <option value="f" id="o-female">Weiblich</option>
+                        <option value="d" id="o-other">Divers</option>
+                    </select>
+                </div>
+                <select id="c-act" style="margin-bottom: 10px;">
+                    <option value="1.2" id="act-1">Sedentär (Kein Sport)</option>
+                    <option value="1.375" id="act-2">Leicht (1-3 Tage)</option>
+                    <option value="1.55" id="act-3">Mäßig (3-5 Tage)</option>
+                    <option value="1.725" id="act-4">Aktiv (6-7 Tage)</option>
+                </select>
+                <button class="btn btn-blue" onclick="calculateBody()" id="b-calc">Berechnen</button>
+                <div id="bmi-result" style="margin-top:10px; font-size:13px; font-weight: bold;"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 id="l-water-title">Wasser-Tracker</h3>
+            <div class="water-controls">
+                <div id="water-display" style="font-size: 20px; font-weight: 700; color: var(--water);">0 ml</div>
+                <div>
+                    <button class="water-btn" onclick="addWater(250)">+250</button>
+                    <button class="water-btn" onclick="addWater(500)">+500</button>
+                    <button onclick="addWater(-250)" style="border:none; background:none; cursor:pointer; font-size:18px;">↺</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3 id="l-weight-title">Gewicht Verlauf</h3>
+            <div class="weight-chart-container">
+                <svg id="weight-svg" viewBox="0 0 300 100" preserveAspectRatio="none" style="width:100%; height:100%;"></svg>
+            </div>
+        </div>
+    </aside>
+</main>
+
+<script>
+// DEV KÜTÜPHANE - HİÇBİR ŞEY SİLİNMEDİ
+const smartLib = {
+    "avokado": {cal:160, c:9, p:2, f:15, unit:150}, "avocado": {cal:160, c:9, p:2, f:15, unit:150},
+    "domates": {cal:18, c:3.9, p:0.9, f:0.2, unit:120}, "tomato": {cal:18, c:3.9, p:0.9, f:0.2, unit:120}, "tomate": {cal:18, c:3.9, p:0.9, f:0.2, unit:120},
+    "salatalık": {cal:15, c:3.6, p:0.7, f:0.1, unit:120}, "cucumber": {cal:15, c:3.6, p:0.7, f:0.1, unit:120}, "gurke": {cal:15, c:3.6, p:0.7, f:0.1, unit:120},
+    "muz": {cal:89, c:23, p:1.1, f:0.3, unit:120}, "banana": {cal:89, c:23, p:1.1, f:0.3, unit:120}, "banane": {cal:89, c:23, p:1.1, f:0.3, unit:120},
+    "çilek": {cal:32, c:7.7, p:0.7, f:0.3, unit:15}, "strawberry": {cal:32, c:7.7, p:0.7, f:0.3, unit:15}, "erdbeere": {cal:32, c:7.7, p:0.7, f:0.3, unit:15},
+    "bulgur": {cal:342, c:76, p:12, f:1.3, unit:100}, "yulaf sütü": {cal:50, p:1, c:7, f:2, unit:200}, "oat milk": {cal:50, p:1, c:7, f:2, unit:200}, "hafermilch": {cal:50, p:1, c:7, f:2, unit:200},
+    "elma": {cal:52, c:14, p:0.3, f:0.2, unit:150}, "apple": {cal:52, c:14, p:0.3, f:0.2, unit:150}, "apfel": {cal:52, c:14, p:0.3, f:0.2, unit:150},
+    "ananas": {cal:50, c:13, p:0.5, f:0.1, unit:100}, "pineapple": {cal:50, c:13, p:0.5, f:0.1, unit:100},
+    "mango": {cal:60, c:15, p:0.8, f:0.4, unit:200}, "makarna": {cal:131, c:25, p:5, f:1.1, unit:150}, "pasta": {cal:131, c:25, p:5, f:1.1, unit:150},
+    "yumurta": {cal:155, c:1.1, p:13, f:11, unit:50}, "ei": {cal:155, c:1.1, p:13, f:11, unit:50}, "chicken": {cal:165, c:0, p:31, f:3.6, unit:150}
+};
+
+const i18n = {
+    de: { sum:"Zusammenfassung", assistant:"Intelligenter Assistent", diary:"Tagebuch", target_title:"Ziel & Rechner", w_title:"Gewicht Verlauf", b_add:"Hinzufügen", water_title:"Wasser-Tracker", pc:"Stück", po:"Portion", msg:"Was hast du gegessen?", br:"Frühstück", lu:"Mittagessen", di:"Abendessen", sn:"Snack", be:"Getränk", calc_btn:"Berechnen", male:"Männlich", female:"Weiblich", other:"Divers", act1:"Sedentär (Kein Sport)", act2:"Leicht (1-3 Tage)", act3:"Mäßig (3-5 Tage)", act4:"Aktiv (6-7 Tage)", w_in:"kg", h_in:"cm", a_in:"Alter", q_in:"Menge" },
+    tr: { sum:"Özet", assistant:"Akıllı Asistan", diary:"Günlük", target_title:"Hedef & Hesaplayıcı", w_title:"Kilo Analizi", b_add:"Ekle", water_title:"Su Takibi", pc:"Adet", po:"Porsiyon", msg:"Ne yedin?", br:"Kahvaltı", lu:"Öğle Yemeği", di:"Akşam Yemeği", sn:"Atıştırmalık", be:"İçecek", calc_btn:"Hesapla", male:"Erkek", female:"Kadın", other:"Diğer", act1:"Hareketsiz (Spor yok)", act2:"Hafif (Haftada 1-3)", act3:"Orta (Haftada 3-5)", act4:"Aktif (Haftada 6-7)", w_in:"kg", h_in:"cm", a_in:"Yaş", q_in:"Miktar" },
+    en: { sum:"Summary", assistant:"Assistant", diary:"Diary", target_title:"Goal & Calc", w_title:"Weight Graph", b_add:"Add", water_title:"Water Tracker", pc:"Piece", po:"Portion", msg:"What eaten?", br:"Breakfast", lu:"Lunch", di:"Dinner", sn:"Snack", be:"Drink", calc_btn:"Calculate", male:"Male", female:"Female", other:"Other", act1:"Sedentary (No sport)", act2:"Light (1-3 days)", act3:"Moderate (3-5 days)", act4:"Active (6-7 days)", w_in:"kg", h_in:"cm", a_in:"Age", q_in:"Amount" }
+};
+
+let currentLang = 'de', selectedDate = new Date().toISOString().split('T')[0], allData = JSON.parse(localStorage.getItem('nutri_v26_data')) || {};
+
+function renderCalendar() {
+    const strip = document.getElementById('calendar-strip'); strip.innerHTML = "";
+    for(let i=-3; i<=3; i++) {
+        let d = new Date(); d.setDate(d.getDate() + i); let iso = d.toISOString().split('T')[0];
+        let btn = document.createElement('button'); btn.className = `day-btn ${iso === selectedDate ? 'active' : ''}`;
+        btn.innerHTML = `<span>${d.toLocaleDateString(currentLang, {weekday:'short'})}</span>${d.getDate()}`;
+        btn.onclick = () => { selectedDate = iso; renderCalendar(); updateUI(); }; strip.appendChild(btn);
+    }
+}
+
+function syncWeight(val) {
+    if(!allData[selectedDate]) allData[selectedDate] = { logs: [], water: 0, weight: 0 };
+    allData[selectedDate].weight = parseFloat(val) || 0;
+    save(); renderWeightChart();
+}
+
+function renderWeightChart() {
+    const svg = document.getElementById('weight-svg'); svg.innerHTML = "";
+    const dates = []; for(let i=-6; i<=0; i++){ let d = new Date(); d.setDate(d.getDate()+i); dates.push(d.toISOString().split('T')[0]); }
+    const pts = dates.map((d, i) => ({ x: i * 50, y: allData[d]?.weight || 0 })).filter(p => p.y > 0);
+    if(pts.length < 2) return;
+    const weights = pts.map(p => p.y);
+    const maxW = Math.max(...weights) + 1, minW = Math.min(...weights) - 1;
+    let pathD = "";
+    pts.forEach((p, i) => {
+        let yPos = 100 - ((p.y - minW) / (maxW - minW) * 80 + 10);
+        pathD += (i === 0 ? "M" : "L") + `${p.x},${yPos} `;
+        svg.innerHTML += `<circle cx="${p.x}" cy="${yPos}" r="4" fill="var(--primary)" />`;
+    });
+    svg.innerHTML = `<path d="${pathD}" style="fill:none; stroke:var(--primary); stroke-width:3;"/>` + svg.innerHTML;
+}
+
+function addWater(ml) {
+    if(!allData[selectedDate]) allData[selectedDate] = { logs: [], water: 0, weight: 0 };
+    allData[selectedDate].water = Math.max(0, (allData[selectedDate].water || 0) + ml);
+    save(); updateUI();
+}
+
+function handlePreview() {
+    const query = document.getElementById('smart-input').value.toLowerCase();
+    const amt = parseFloat(document.getElementById('smart-amt').value) || 0;
+    const unit = document.getElementById('smart-unit').value;
+    const pre = document.getElementById('preview-area');
+    if(!query || amt <= 0) { pre.style.display = 'none'; return; }
+    const key = Object.keys(smartLib).find(k => query.includes(k));
+    const base = key ? smartLib[key] : {cal:100, c:12, p:6, f:4, unit:100};
+    let ratio = (unit === 'g') ? amt/100 : (amt * base.unit) / 100;
+    let res = { cal: Math.round(base.cal * ratio), p: Math.round(base.p * ratio), c: Math.round(base.c * ratio), f: Math.round(base.f * ratio), name: query };
+    pre.style.display = 'block'; pre.innerHTML = `${res.cal} kcal | P: ${res.p}g C: ${res.c}g F: ${res.f}g`;
+    pre.dataset.val = JSON.stringify(res);
+}
+
+function addLog() {
+    const data = document.getElementById('preview-area').dataset.val; if(!data) return;
+    if(!allData[selectedDate]) allData[selectedDate] = { logs: [], water: 0, weight: 0 };
+    const logObj = JSON.parse(data); logObj.meal = document.getElementById('meal-select').value;
+    allData[selectedDate].logs.push(logObj); save(); updateUI();
+    document.getElementById('smart-input').value = ""; document.getElementById('smart-amt').value = "";
+    document.getElementById('preview-area').style.display = 'none';
+}
+
+function updateUI() {
+    const target = parseInt(document.getElementById('target-input').value) || 2000;
+    const dayData = allData[selectedDate] || { logs: [], water: 0, weight: 0 };
+    let totals = { cal: 0, c: 0, p: 0, f: 0 };
+    const list = document.getElementById('diary-list'); list.innerHTML = "";
+    const groups = { br: [], lu: [], di: [], sn: [], be: [] };
+    
+    dayData.logs.forEach((l, idx) => { totals.cal += l.cal; totals.c += l.c; totals.p += l.p; totals.f += l.f; groups[l.meal].push({ ...l, idx }); });
+
+    Object.keys(groups).forEach(m => {
+        if (groups[m].length === 0) return;
+        let html = `<div style="margin-bottom:15px;"><b style="color:var(--${m}); text-transform:uppercase; font-size:11px;">${i18n[currentLang][m]}</b>`;
+        groups[m].forEach(l => {
+            html += `<div class="log-item" style="border-left: 5px solid var(--${m})"><div><b>${l.name}</b><br><small>${l.cal} kcal | P:${l.p}g C:${l.c}g F:${l.f}g</small></div><button onclick="removeLog(${l.idx})" style="border:none; background:none; color:#cbd5e1; cursor:pointer; font-size:18px;">✕</button></div>`;
+        });
+        list.innerHTML += html + "</div>";
+    });
+
+    document.getElementById('cal-main').innerText = `${totals.cal} / ${target} kcal`;
+    document.getElementById('v-c').innerText = totals.c + "g"; document.getElementById('v-p').innerText = totals.p + "g"; document.getElementById('v-f').innerText = totals.f + "g";
+    document.getElementById('b-c').style.width = Math.min((totals.cal/target)*100, 100) + "%";
+    document.getElementById('water-display').innerText = (dayData.water || 0) + " ml";
+    document.getElementById('c-w').value = dayData.weight || "";
+    renderWeightChart();
+}
+
+function calculateBody() {
+    const w = parseFloat(document.getElementById('c-w').value), h = parseFloat(document.getElementById('c-h').value), a = parseFloat(document.getElementById('c-a').value), g = document.getElementById('c-g').value, act = parseFloat(document.getElementById('c-act').value);
+    if(!w || !h || !a) return;
+    const bmi = (w / ((h/100)**2)).toFixed(1);
+    let bmr = (10 * w) + (6.25 * h) - (5 * a);
+    bmr = (g === 'm') ? bmr + 5 : (g === 'f' ? bmr - 161 : bmr - 80);
+    const res = Math.round(bmr * act);
+    document.getElementById('bmi-result').innerText = `BMI: ${bmi} | Goal: ${res} kcal`;
+    document.getElementById('target-input').value = res;
+    syncWeight(w); updateUI();
+}
+
+function setLang(l) {
+    currentLang = l; const t = i18n[l];
+    document.getElementById('l-sum').innerText = t.sum; document.getElementById('l-assistant').innerText = t.assistant;
+    document.getElementById('l-diary').innerText = t.diary; document.getElementById('l-target-title').innerText = t.target_title;
+    document.getElementById('l-weight-title').innerText = t.w_title; document.getElementById('b-add').innerText = t.b_add;
+    document.getElementById('l-water-title').innerText = t.water_title; document.getElementById('b-calc').innerText = t.calc_btn;
+    
+    document.getElementById('smart-input').placeholder = t.msg;
+    document.getElementById('smart-amt').placeholder = t.q_in;
+    document.getElementById('c-w').placeholder = t.w_in;
+    document.getElementById('c-h').placeholder = t.h_in;
+    document.getElementById('c-a').placeholder = t.a_in;
+    
+    ["pc","po","br","lu","di","sn","be","male","female","other"].forEach(id => document.getElementById('o-'+id).innerText = t[id]);
+    [1,2,3,4].forEach(i => document.getElementById('act-'+i).innerText = t['act'+i]);
+    
+    renderCalendar(); updateUI();
+}
+
+function removeLog(idx) { allData[selectedDate].logs.splice(idx,1); save(); updateUI(); }
+function save() { localStorage.setItem('nutri_v26_data', JSON.stringify(allData)); }
+setLang('de');
+</script>
+</body>
+</html>
